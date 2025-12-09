@@ -4,7 +4,7 @@
   "description": "Minimal QA project to test Aave v3 liquidation with manual oracle on contract.dev staging",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "test": "hardhat test"
 
   },
   "devDependencies": {
