@@ -15,12 +15,9 @@ module.exports = {
     }
   },
   networks: {
-    hardhat: {
-      
-    },
+    hardhat: {},
     contractDevEthereum: {
       url: CONTRACT_DEV_RPC || "",
-      chainId: 59547,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : []
     }
   }
