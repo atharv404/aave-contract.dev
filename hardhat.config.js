@@ -16,7 +16,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 31337
+      
     },
     contractDevEthereum: {
       url: CONTRACT_DEV_RPC || "",
