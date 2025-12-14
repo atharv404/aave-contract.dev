@@ -21,11 +21,6 @@ contract MockOracle {
     
     constructor() {
         owner = msg.sender;
-        
-        // Initialize with reasonable default prices (8 decimals for USD price)
-        // WETH: ~$2400 USD -> 2400 * 10^8 = 240000000000
-        // DAI: ~$1 USD -> 1 * 10^8 = 100000000
-        // These will be overridden by actual addresses in tests
     }
     
     /**

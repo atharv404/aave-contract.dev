@@ -37,7 +37,7 @@ async function main() {
   const debt = process.env.AAVE_DAI;
 
   if (!pool || !oracleAddress || !collateral || !debt) {
-    throw new Error("Set AAVE_POOL, MANUAL_ORACLE (or auto-deploy), AAVE_WETH, AAVE_DAI in .env");
+    throw new Error("Missing required env vars: AAVE_POOL, AAVE_WETH, AAVE_DAI. MANUAL_ORACLE will auto-deploy if not set.");
   }
 
   console.log("Deploying TestAaveLiquidation with:");
