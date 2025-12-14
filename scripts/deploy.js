@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 require("dotenv").config();
+const { ORACLE_PRICES } = require("../constants");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -21,14 +22,12 @@ async function main() {
     oracleAddress = await mockOracle.getAddress();
     console.log("✅ MockOracle deployed at:", oracleAddress);
     
-    // Set initial prices
-    const wethPrice = 240000000000n; // $2400
-    const daiPrice = 100000000n; // $1
+    // Set initial prices using shared constants
     const wethAddress = process.env.AAVE_WETH || "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
     const daiAddress = process.env.AAVE_DAI || "0x6B175474E89094C44Da98b954EedeAC495271d0F";
     
-    await (await mockOracle.setPrice(wethAddress, wethPrice)).wait();
-    await (await mockOracle.setPrice(daiAddress, daiPrice)).wait();
+    await (await mockOracle.setPrice(wethAddress, ORACLE_PRICES.WETH)).wait();
+    await (await mockOracle.setPrice(daiAddress, ORACLE_PRICES.DAI)).wait();
     console.log("✅ Initial prices set (WETH: $2400, DAI: $1)\n");
   }
 

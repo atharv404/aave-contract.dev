@@ -34,9 +34,12 @@ const ORACLE_DECIMALS = 8; // Chainlink price feed decimals
 
 // Oracle Price Constants (8 decimals for USD price)
 const ORACLE_PRICES = {
-  WETH_INITIAL: 240000000000n, // $2400 USD
-  DAI: 100000000n,              // $1 USD
+  WETH_INITIAL: BigInt(2400 * 10**8), // $2400 USD = 240000000000 (8 decimals)
+  DAI: BigInt(1 * 10**8),              // $1 USD = 100000000 (8 decimals)
 };
+
+// Price manipulation constants
+const PRICE_DROP_PERCENTAGE = 50n; // 50% price drop for liquidation testing
 
 // Helper function to format ETH values
 function formatEth(value) {
@@ -424,10 +427,10 @@ describe("🚀 COMPREHENSIVE AAVE V3 LIQUIDATION TEST SUITE", function () {
       
       console.log("   📊 Current WETH price:", Number(initialWethPrice) / 1e8, "USD");
       
-      // Drop price by 50%
-      newLowerPrice = initialWethPrice / 2n;
+      // Drop price by configured percentage
+      newLowerPrice = initialWethPrice * (100n - PRICE_DROP_PERCENTAGE) / 100n;
       
-      console.log("   📉 New WETH price (50% drop):", Number(newLowerPrice) / 1e8, "USD");
+      console.log("   📉 New WETH price (" + PRICE_DROP_PERCENTAGE + "% drop):", Number(newLowerPrice) / 1e8, "USD");
       console.log("   ⚠️  This should trigger liquidation risk!");
     });
 

@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 require("dotenv").config();
+const { ORACLE_PRICES } = require("../constants");
 
 /**
  * Deploy MockOracle for testing price manipulation scenarios
@@ -21,22 +22,17 @@ async function main() {
   const oracleAddress = await mockOracle.getAddress();
   console.log("✅ MockOracle deployed to:", oracleAddress);
 
-  // Set initial prices
+  // Set initial prices using shared constants
   console.log("\nSetting initial prices...");
   
-  // WETH price: $2400 with 8 decimals
-  const wethPrice = 240000000000n; // 2400 * 10^8
   const wethAddress = process.env.AAVE_WETH || "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+  const daiAddress = process.env.AAVE_DAI || "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   
-  const setWethTx = await mockOracle.setPrice(wethAddress, wethPrice);
+  const setWethTx = await mockOracle.setPrice(wethAddress, ORACLE_PRICES.WETH);
   await setWethTx.wait();
   console.log("✅ WETH price set to $2400");
 
-  // DAI price: $1 with 8 decimals
-  const daiPrice = 100000000n; // 1 * 10^8
-  const daiAddress = process.env.AAVE_DAI || "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-  
-  const setDaiTx = await mockOracle.setPrice(daiAddress, daiPrice);
+  const setDaiTx = await mockOracle.setPrice(daiAddress, ORACLE_PRICES.DAI);
   await setDaiTx.wait();
   console.log("✅ DAI price set to $1");
 
