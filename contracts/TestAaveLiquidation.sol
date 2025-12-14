@@ -66,24 +66,25 @@ contract TestAaveLiquidation {
         owner = msg.sender;
     }
 
-    // FIX #1: Properly handle token transfer before approval
+    // FIX: Removed {value: amount} - Aave doesn't accept ETH directly
+    // All assets must be ERC20 tokens
     function supply(address asset, uint256 amount) external {
-        if (asset == address(0)) {
-            pool.supply{value: amount}(address(0), amount, address(this), 0);
-        } else {
-            // Transfer tokens FROM msg.sender TO this contract
-            require(IERC20(asset).transferFrom(msg.sender, address(this), amount), "Transfer failed");
-            // Approve pool to spend tokens
-            require(IERC20(asset).approve(address(pool), amount), "Approval failed");
-            // Supply to Aave
-            pool.supply(asset, amount, address(this), 0);
-        }
+        require(asset != address(0), "Native ETH not supported in Aave V3");
+        
+        // Transfer tokens FROM msg.sender TO this contract
+        require(IERC20(asset).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        
+        // Approve pool to spend tokens
+        require(IERC20(asset).approve(address(pool), amount), "Approval failed");
+        
+        // Supply to Aave
+        pool.supply(asset, amount, address(this), 0);
+        
         emit Supplied(asset, amount);
         _recordHealthFactor();
     }
 
-    // FIX #4: Add withdrawal function
-    function withdraw(address asset, uint256 amount) external {
+    function withdraw(address asset, uint256 amount) external onlyOwner {
         pool.withdraw(asset, amount, address(this));
         emit Withdrawn(asset, amount);
         _recordHealthFactor();
@@ -95,7 +96,6 @@ contract TestAaveLiquidation {
         _recordHealthFactor();
     }
 
-    // FIX #5: Add access control to price manipulation
     function setPriceFeedValue(address asset, uint256 newPrice) external onlyOwner {
         require(newPrice > 0, "price zero");
         oracle.setPrice(asset, newPrice);
@@ -114,6 +114,11 @@ contract TestAaveLiquidation {
 
     function getHealthHistoryLength() external view returns (uint256) {
         return healthHistory.length;
+    }
+
+    function getHealthHistory(uint256 index) external view returns (HFRecord memory) {
+        require(index < healthHistory.length, "Index out of bounds");
+        return healthHistory[index];
     }
 
     function _recordHealthFactor() internal {
