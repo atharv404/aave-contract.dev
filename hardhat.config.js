@@ -15,10 +15,28 @@ module.exports = {
     }
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      // Use hardhat network for local testing
+      chainId: 31337,
+      allowUnlimitedContractSize: true
+    },
     contractDevEthereum: {
       url: CONTRACT_DEV_RPC || "",
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : []
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+      chainId: 73350, // Ethereum Stagenet Chain ID
+      timeout: 60000,
+      gasPrice: "auto"
+    },
+    // Alias for stagenet
+    stagenet: {
+      url: CONTRACT_DEV_RPC || "",
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+      chainId: 73350,
+      timeout: 60000,
+      gasPrice: "auto"
     }
+  },
+  mocha: {
+    timeout: 120000 // 2 minutes for tests that interact with stagenet
   }
 };
