@@ -2,8 +2,10 @@
 pragma solidity ^0.8.19;
 
 interface IAavePool {
-    function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external payable;
+    function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external;
+    function withdraw(address asset, uint256 amount, address to) external returns (uint256);
     function borrow(address asset, uint256 amount, uint256 interestRateMode, uint16 referralCode, address onBehalfOf) external;
+    function repay(address asset, uint256 amount, uint256 interestRateMode, address onBehalfOf) external returns (uint256);
     function getUserAccountData(address user)
         external
         view
@@ -24,14 +26,17 @@ interface IManualPriceOracle {
 
 interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
     function balanceOf(address a) external view returns (uint256);
 }
 
 contract TestAaveLiquidation {
     IAavePool public pool;
     IManualPriceOracle public oracle;
-    address public collateralAsset; // e.g. WETH
-    address public debtAsset;       // e.g. DAI
+    address public collateralAsset;
+    address public debtAsset;
+    address public owner;
 
     struct HFRecord {
         uint256 blockNumber;
@@ -42,36 +47,56 @@ contract TestAaveLiquidation {
     HFRecord[] public healthHistory;
 
     event Supplied(address asset, uint256 amount);
-    event Borrowed(address asset, uint256 amount);
+    event Borrowed(address asset, uint256 amount, uint256 rateMode);
+    event Withdrawn(address asset, uint256 amount);
+    event Repaid(address asset, uint256 amount);
     event PriceUpdated(address asset, uint256 newPrice);
     event HealthFactorRecorded(uint256 blockNumber, uint256 timestamp, uint256 healthFactor);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner");
+        _;
+    }
 
     constructor(address _pool, address _oracle, address _collateralAsset, address _debtAsset) {
         pool = IAavePool(_pool);
         oracle = IManualPriceOracle(_oracle);
         collateralAsset = _collateralAsset;
         debtAsset = _debtAsset;
+        owner = msg.sender;
     }
 
-    function supply(address asset, uint256 amount) external payable {
+    // FIX #1: Properly handle token transfer before approval
+    function supply(address asset, uint256 amount) external {
         if (asset == address(0)) {
-            // supply native ETH as collateral if pool supports it
             pool.supply{value: amount}(address(0), amount, address(this), 0);
         } else {
-            IERC20(asset).approve(address(pool), amount);
+            // Transfer tokens FROM msg.sender TO this contract
+            require(IERC20(asset).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+            // Approve pool to spend tokens
+            require(IERC20(asset).approve(address(pool), amount), "Approval failed");
+            // Supply to Aave
             pool.supply(asset, amount, address(this), 0);
         }
         emit Supplied(asset, amount);
         _recordHealthFactor();
     }
 
-    function borrow(address asset, uint256 amount, uint256 rateMode) external {
-        pool.borrow(asset, amount, rateMode, 0, address(this));
-        emit Borrowed(asset, amount);
+    // FIX #4: Add withdrawal function
+    function withdraw(address asset, uint256 amount) external {
+        pool.withdraw(asset, amount, address(this));
+        emit Withdrawn(asset, amount);
         _recordHealthFactor();
     }
 
-    function setPriceFeedValue(address asset, uint256 newPrice) external {
+    function borrow(address asset, uint256 amount, uint256 rateMode) external onlyOwner {
+        pool.borrow(asset, amount, rateMode, 0, address(this));
+        emit Borrowed(asset, amount, rateMode);
+        _recordHealthFactor();
+    }
+
+    // FIX #5: Add access control to price manipulation
+    function setPriceFeedValue(address asset, uint256 newPrice) external onlyOwner {
         require(newPrice > 0, "price zero");
         oracle.setPrice(asset, newPrice);
         emit PriceUpdated(asset, newPrice);
